@@ -1352,39 +1352,18 @@ INSERT INTO Book_Authors (NAME_SURNAME,BOOKID) VALUES ('Ferit Edgü',364)
 
 /*============================== END POPULATING TABLES ==============================*/
 
-/* ======================= STORED PROCEDURE QUERY QUESTIONS ======================= */
-/* #1- How many copies of the book titled "Monte Kristo Kontu Serisi" are owned by the library branch whose name is "Atatürk Kitaplığı"? */
+/* ======================= STORED PROCEDURE QUERY QUESTION ======================= */
+/* #1- To see who borrowed which book from which branch */
 
-CREATE PROC dbo.BookCopiesAtAllAtaturkKıtaplıgı
-(@BookTitle varchar(70) = 'Monte Cristo Kontu Serisi', @BranchName varchar(70) ='Atatürk Kitaplığı')
+CREATE PROC dbo.BookBorrowers
 AS
-SELECT Book.TITLE, Library_Branch.NAME_, Library_Branch.ID, Book_Copies.NO_OF_COPIES FROM Book_Copies
-	INNER JOIN Book ON Book.ID=Book_Copies.BOOKID
-	INNER JOIN Library_Branch ON Book_Copies.BRANCHID=Library_Branch.ID
-WHERE Book.TITLE=@BookTitle AND Library_Branch.NAME_ =@BranchName
+SELECT B.TITLE AS BOOK_TITLE, BA.NAME_SURNAME AS AUTHOR, P.NAME_ AS PUBLISHER, LB.NAME_ AS BRANCH_NAME, LB.ADDRESS AS BRANCH_ADDRESS, Br.NAME_ AS BORROWER_NAME, Br.SURNAME_ AS BORROWER_SURNAME, Br.CARDNO AS BORROWER_CARDNO FROM Book_Loans BL
+	INNER JOIN Book B ON B.ID=BL.BOOKID 
+	INNER JOIN Borrower Br ON Br.CARDNO=BL.CARDNO
+	INNER JOIN Library_Branch LB ON LB.ID=BL.BRANCHID
+	INNER JOIN Book_Authors BA ON BA.BOOKID=B.ID 
+	INNER JOIN Publisher P ON P.ID=B.PUBLISHER_ID
 GO
-EXEC dbo.BookCopiesAtAllAtaturkKıtaplıgı
+EXEC dbo.BookBorrowers
 
-/* #2- Retrieve the names of all borrowers who do not have any books checked out. */
-
-CREATE PROC dbo.NoLoans
-AS
-SELECT Borrower.NAME_ FROM Borrower 
-WHERE NOT EXISTS (SELECT * FROM Book_Loans WHERE Book_Loans.CARDNO = Borrower.CARDNO)
-GO
-EXEC dbo.NoLoans
-
-/* #3- Retrieve the names, addresses, and number of books checked out for all borrowers who have more than one book checked out. */
-
-CREATE PROC dbo.BooksLoanedOut
-(@BooksCheckedOut INT = 1)
-AS
-SELECT Borrower.NAME_ AS Borrower_Name, Borrower.ADDRESS_ AS Borrower_Address,
-		COUNT(Borrower.NAME_) AS Books_Checked_Out FROM Book_Loans
-				INNER JOIN Borrower ON Book_Loans.CARDNO = Borrower.CARDNO
-				GROUP BY Borrower.NAME_, Borrower.ADDRESS_
-				HAVING COUNT(Borrower.NAME_) > @BooksCheckedOut
-GO
-EXEC dbo.BooksLoanedOut
-
-/* ======================= STORED PROCEDURE QUERY QUESTIONS ======================= */
+/* ======================= STORED PROCEDURE QUERY QUESTION ======================= */
